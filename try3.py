@@ -53,17 +53,17 @@ p = figure(
     title="Climate Map",
     x_axis_type="mercator",
     y_axis_type="mercator",
-    tools="pan,wheel_zoom,zoom_in,zoom_out,reset,tap",
+    tools="pan,wheel_zoom,zoom_in,zoom_out,reset",
     width=900,
     height=800
 )
 
 # Add tile provider (map background)
-p.add_tile("CartoDB Positron")
-# xyz_provider =  xyzservices.TileProvider(name="Google Maps",
-#                                              url=" https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-#                                              attribution="(C) xyzservices",
-#                                              )  
+# p.add_tile("CartoDB Positron")
+xyz_provider =  xyzservices.TileProvider(name="Google Maps",
+                                              url=" https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                                              attribution="(C) xyzservices",
+                                              )  
 
 # p.add_tile(xyz_provider,alpha=0.5)
 
@@ -275,10 +275,6 @@ state_select_callback = CustomJS(
     district_select.value = '';
     //district_select.value = district_select.options.length > 0 ? district_select.options[0] : "";
 
-
-
-
-
     // Filter values based on the selected state
     const values = source.data[selected_param].filter((value, index) => source.data['State'][index] === state);
     values.sort((a, b) => a - b);
@@ -361,15 +357,7 @@ district_select_callback = CustomJS(
 
     """
 )
-
-
 district_select.js_on_change('value', district_select_callback)
-
-
-
-
-
-
 
 
 callback = CustomJS(
@@ -391,9 +379,9 @@ callback = CustomJS(
 
     // Update hover tool
     hover.tooltips = [["State", "@State"], ["District", "@District"], [selected_param, `@${selected_param}`]];
+    
 
     const selected = geo_source.selected.indices;
-
     if (selected.length > 0) {
         const state = geo_source.data['State'][selected[0]];
 
@@ -459,26 +447,19 @@ callback = CustomJS(
         boxplot_source.data = boxplot_data;
         p_box.title.text = `${selected_param}`;
     }
-"""
-);
-
+    """)
 parameter_select.js_on_change('value', callback)
 
 
 
 tap_callback = CustomJS(
     args=dict(source=geo_source, boxplot_source=boxplot_source, bar_source=bar_source, parameter_select=parameter_select, p_box=p_box, p_bar=p_bar, patches=patches),
-    code="""
-    const selected_param = parameter_select.value;
+    code= """
+    source.selected.indices = [source.selected.indices.pop()];   
+    """  )
 
-    //console.log("old_selected",selected)
-
-    console.log("source.selected.indices[0]",[source.selected.indices[0]])
-    const selected= [source.selected.indices[0]];
-
-    console.log("new_selected",selected)
-    console.log("selected.length",selected.length)
-
+"""
+    const selected= source.selected.indices;
     if (selected.length > 0) {
         const state = source.data['State'][selected[0]];
 
@@ -526,8 +507,8 @@ tap_callback = CustomJS(
         bar_source.data = {districts: districts, values: district_values, colors: colors};
         p_bar.x_range.factors = districts;
         p_bar.title.text = `${selected_param} in ${state}`;
-        p_bar.y_range.start = Math.min(0, ...district_values)
-        console.log("p_bar.y_range.start",p_bar.y_range.start)
+        p_bar.y_range.start = Math.min(0, ...district_values);
+        console.log("p_bar.y_range.start",p_bar.y_range.start);
 
         // Highlight the selected patch
         //for (let i = 0; i < source.selected.indices.length; i++) {
@@ -551,11 +532,15 @@ tap_callback = CustomJS(
         # }
         source.change.emit();
     }
-"""
-)
+    """
+#    )
 
 
-p.js_on_event('tap', tap_callback)
+tap = TapTool()
+tap.callback = tap_callback
+p.add_tools(tap)  
+ 
+#p.js_on_event('tap', tap_callback)
 
 
 
