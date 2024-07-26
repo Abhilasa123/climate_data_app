@@ -312,14 +312,7 @@ state_select_callback = CustomJS(
     p_bar.x_range.factors = districts;
     p_bar.title.text = `${selected_param} in ${state}`;
     # Set the y-axis range with an additional padding and ensure min is at least -20
-
-    data_min = gdf[selected_param].min()
-    data_max = gdf[selected_param].max()
-    # Set the y-axis range to fit between the calculated min and max values
-    p_bar.y_range = Range1d(start=data_min, end=data_max)
-    p_bar.y_range = Range1d(start=min(data_min, -20), end=data_max)
-
-    //p_bar.y_range.start = Math.min(0, ...district_values);
+    p_bar.y_range.start = Math.min(0, ...district_values);
     """
 )
 
