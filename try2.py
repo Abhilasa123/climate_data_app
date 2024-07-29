@@ -7,12 +7,16 @@ import pandas as pd
 import json
 import shapely
 from bokeh.io import output_file, show
-from bokeh.models import BasicTicker, PrintfTickFormatter, TapTool, CustomJS, Legend, LegendItem
+from bokeh.models import BasicTicker, PrintfTickFormatter, TapTool, CustomJS, Legend, LegendItem,Select,Div
 from bokeh.plotting import figure
 from bokeh.models import GeoJSONDataSource, HoverTool, Select, ColumnDataSource, Range1d, ColorBar, LinearColorMapper
 from bokeh.layouts import column, row
 from bokeh.palettes import Turbo256, Viridis256, Inferno256, Cividis256, Plasma256
-from bokeh.models import Div
+from bokeh.io import show
+from bokeh.models import Range1d
+from bokeh.layouts import layout
+
+
 from pyproj import Transformer
 
 # Function to transform lat/lon to Web Mercator
@@ -22,7 +26,8 @@ def transform_to_web_mercator(gdf):
     return gdf
 
 # Load your shapefile using Geopandas
-shapefile_path = r'C:\Users\AbhilasaBarman\Downloads\SSP245&585_shp\SSP245_ClimateData_India.shp'
+# shapefile_path = r'C:\Users\AbhilasaBarman\Downloads\SSP245&585_shp\SSP245_ClimateData_India.shp'
+shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp'
 gdf = gpd.read_file(shapefile_path)
 
 # Ensure all relevant columns are numeric
@@ -53,7 +58,8 @@ p = figure(
     title="Climate Map",
     x_axis_type="mercator",
     y_axis_type="mercator",
-    tools="pan,wheel_zoom,zoom_in,zoom_out,reset,tap",
+    # tools="pan,wheel_zoom,zoom_in,zoom_out,reset,tap",
+    tools="pan,wheel_zoom,zoom_in,zoom_out,reset",
     width=900,
     height=800
 )
@@ -111,39 +117,39 @@ parameter_palettes = {
 
 # Define parameter descriptions
 parameter_descriptions = {
-    'Population': 'Total population in the area.',
+    'Population': 'Total population in the area(2011).',
     'HWDI_per_r': 'Heatwave Duration Index per region.',
     'HWDI_per_t': 'Heatwave Duration Index per time period.',
     'Annual_RF_': 'Annual rainfall.',
-    'JJAS_RF_Ch': 'Rainfall changes in JJAS period.',
-    'OND_RF_Cha': 'Rainfall changes in OND period.',
+    'JJAS_RF_Ch': 'Rainfall changes in Southwest monsoon (JJAS).',
+    'OND_RF_Cha': 'Rainfall changes in Northeast monsoon (OND).',
     'TMAX_Annua': 'Maximum temperature annually.',
-    'TMAX_MAM_C': 'Maximum temperature in MAM period.',
+    'TMAX_MAM_C': 'Maximum temperature in Summer (MAM).',
     'TMIN_Annua': 'Minimum temperature annually.',
-    'TMIN_DJF_C': 'Minimum temperature in DJF period.',
-    'JJAS_CDD_P': 'Consecutive dry days in JJAS period.',
-    'OND_CDD_Pe': 'Consecutive dry days in OND period.',
-    'MAM_CSU_pe': 'Cold spell duration in MAM period.',
-    'MAM_CSU__1': 'Cold spell duration in MAM period (alternative measure).',
+    'TMIN_DJF_C': 'Minimum temperature in Winter (DJF).',
+    'JJAS_CDD_P': 'Consecutive dry days in Southwest monsoon (JJAS).',
+    'OND_CDD_Pe': 'Consecutive dry days in Northeast monsoon (OND).',
+    'MAM_CSU_pe': 'Cold spell duration in Summer (MAM).',
+    'MAM_CSU__1': 'Cold spell duration in Summer (MAM) (alternative measure).',
     'WSDI_wrt_9': 'Warm spell duration index with respect to 90th percentile.',
     'Warm_spell': 'Warm spell duration.',
-    'JJAS_R10MM': 'Number of days with more than 10mm rain in JJAS period.',
-    'OND_R10MM_': 'Number of days with more than 10mm rain in OND period.',
-    'JJAS_R20MM': 'Number of days with more than 20mm rain in JJAS period.',
-    'OND_R20MM_': 'Number of days with more than 20mm rain in OND period.',
-    'RX1Day_JJA': 'Maximum one-day rainfall in JJA period.',
-    'RX1Day_OND': 'Maximum one-day rainfall in OND period.',
-    'RX5day_JJA': 'Maximum five-day rainfall in JJA period.',
+    'JJAS_R10MM': 'Number of days with more than 10mm rain in Southwest monsoon (JJAS).',
+    'OND_R10MM_': 'Number of days with more than 10mm rain in Northeast monsoon (OND).',
+    'JJAS_R20MM': 'Number of days with more than 20mm rain in Southwest monsoon (JJAS).',
+    'OND_R20MM_': 'Number of days with more than 20mm rain in Northeast monsoon (OND).',
+    'RX1Day_JJA': 'Maximum one-day rainfall in Southwest monsoon (JJAS).',
+    'RX1Day_OND': 'Maximum one-day rainfall in Northeast monsoon (OND).',
+    'RX5day_JJA': 'Maximum five-day rainfall in Southwest monsoon (JJAS).',
     'F5day_even': 'Maximum five-day rainfall events.',
-    'RX5day_OND': 'Maximum five-day rainfall in OND period.',
+    'RX5day_OND': 'Maximum five-day rainfall in Northeast monsoon (OND).',
     'F5day_ev_1': 'Maximum five-day rainfall events (alternative measure).',
-    'SDII_JJAS': 'Simple daily intensity index in JJAS period.',
-    'SDII_OND': 'Simple daily intensity index in OND period.',
+    'SDII_JJAS': 'Simple daily intensity index in Southwest monsoon (JJAS).',
+    'SDII_OND': 'Simple daily intensity index in Northeast monsoon (OND).',
     'Rainy_Days': 'Total number of rainy days.',
     'Rainy_Da_1': 'Total number of rainy days (alternative measure).',
     'Summer_Day': 'Total number of summer days.',
     'Annual_Wet': 'Annual wet days.',
-    'MAM_Wet_Bu': 'Wet days in MAM period.'
+    'MAM_Wet_Bu': 'Wet days in Summer (MAM).'
 }
 
 
@@ -193,21 +199,7 @@ parameter_select = Select(title="Select Parameter:", value=parameters[0], option
 description_div = Div(text=f"<b style='font-size:16px;'>{initial_param}: {parameter_descriptions[initial_param]}</b>", width=800, height=50)
 
 
-# Create initial boxplot data
-def create_boxplot_data(parameter, values):
-    if values.empty:
-        return dict(q1=[0], q2=[0], q3=[0], upper=[0], lower=[0])
-    q1 = values.quantile(0.25)
-    q2 = values.quantile(0.50)
-    q3 = values.quantile(0.75)
-    iqr = q3 - q1
-    upper = min(q3 + 1.5 * iqr, values.max())
-    lower = max(q1 - 1.5 * iqr, values.min())
-    return dict(q1=[q1], q2=[q2], q3=[q3], upper=[upper], lower=[lower])
-
 # Empty initial boxplot data
-# initial_boxplot_data = create_boxplot_data(parameters[0], pd.Series([]))
-# boxplot_source = ColumnDataSource(data=initial_boxplot_data)
 initial_boxplot_data = dict(q1=[], q2=[], q3=[], upper=[], lower=[])
 boxplot_source = ColumnDataSource(data=initial_boxplot_data)
 
@@ -215,46 +207,38 @@ boxplot_source = ColumnDataSource(data=initial_boxplot_data)
 p_box = figure(title="Boxplot", width=600, height=400)
 p_box.segment(0, 'upper', 0, 'q3', source=boxplot_source, line_color="black")
 p_box.segment(0, 'lower', 0, 'q1', source=boxplot_source, line_color="black")
-p_box.vbar(x=0, width=0.7, bottom='q2', top='q3', source=boxplot_source, fill_color="#598090", line_color="black")
+p_box.vbar(x=0, width=0., bottom='q2', top='q3', source=boxplot_source, fill_color="#598090", line_color="black")
 p_box.vbar(x=0, width=0.7, bottom='q1', top='q2', source=boxplot_source, fill_color="#bb7b85", line_color="black")
 p_box.rect(0, 'upper', 0.2, 0.01, source=boxplot_source, line_color="black")
 p_box.rect(0, 'lower', 0.2, 0.01, source=boxplot_source, line_color="black")
 p_box.xgrid.grid_line_color = None
-p_box.y_range.start = 0
-p_box.y_range.start = min(gdf[initial_param].min(), -20)
-# p_box.y_range.end = max(gdf[initial_param].max(),99999)
 p_box.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
 
 # Create a ColumnDataSource for the bar plot
 bar_source = ColumnDataSource(data=dict(districts=[], values=[], colors=[]))
-
 # Create the bar plot
 p_bar = figure(x_range=[], title="Bar Plot", width=800, height=400)
 p_bar.vbar(x='districts', top='values', width=0.9, color='colors', source=bar_source)
 p_bar.xgrid.grid_line_color = None
-# p_bar.y_range.start = 0
-p_bar.y_range.start = min(gdf[initial_param].min(), -20) 
 p_bar.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
-
-
-
-
-
-
-
-
 
 
 state_district_map = {state: gdf[gdf['State'] == state]['District'].unique().tolist() for state in gdf['State'].unique()}
 # Create Select widgets
-state_select = Select(title="Select State:", options=sorted(gdf['State'].unique().tolist()))
-district_select = Select(title="Select District:", options=[])
+state_select = Select(title="Select State:", options=sorted(gdf['State'].unique().tolist()),styles={'background-color': '#4682B4', 'color': 'white','font-family': 'Arial, sans-serif', 'font-size': '14px'})
+district_select = Select(title="Select District:", options=[],styles={'background-color': '#4682B4', 'color': 'white','font-family': 'Arial, sans-serif', 'font-size': '14px'})
 # district_select = Select(title="Select District:", options=sorted(gdf['District'].unique().tolist()))
+
+# Create a Select widget for sorting options
+sort_select = Select(title="Sort Order:", value=" ", options=["Ascending", "Descending"])
+
 
 # Add a callback to highlight the selected state
 state_select_callback = CustomJS(
-    args=dict(source=geo_source, state_select=state_select,district_select=district_select,state_district_map=state_district_map,boxplot_source=boxplot_source, bar_source=bar_source, parameter_select=parameter_select, p_box=p_box, p_bar=p_bar),
+    args=dict(source=geo_source, state_select=state_select,district_select=district_select,state_district_map=state_district_map,boxplot_source=boxplot_source, bar_source=bar_source, parameter_select=parameter_select, p_box=p_box, p_bar=p_bar,patches=patches,sort_select=sort_select),
     code="""
+
+    console.log("state callback")
 
     // Highlight the selected state
     var data = source.data;
@@ -268,16 +252,13 @@ state_select_callback = CustomJS(
         }
     }
     source.selected.indices = selected_indices;
+ 
     source.change.emit();
+    console.log(source.selected.indices)
 
     //Update district dropdown options
     district_select.options = state_district_map[state];
     district_select.value = '';
-    //district_select.value = district_select.options.length > 0 ? district_select.options[0] : "";
-
-
-
-
 
     // Filter values based on the selected state
     const values = source.data[selected_param].filter((value, index) => source.data['State'][index] === state);
@@ -296,6 +277,10 @@ state_select_callback = CustomJS(
         lower: [lower]
     };
     boxplot_source.data = boxplot_data;
+        p_box.y_range.start = lower
+        p_box.y_range.end = upper
+        p_box.y_range.change.emit();
+
     p_box.title.text = `${selected_param} in ${state}`;
 
     // Update bar plot data for selected parameter for all districts in the state
@@ -309,11 +294,20 @@ state_select_callback = CustomJS(
             colors.push('#006ca5');
         }
     }
+    console.log(districts)
 
     bar_source.data = { districts: districts, values: district_values, colors: colors };
     p_bar.x_range.factors = districts;
     p_bar.title.text = `${selected_param} in ${state}`;
-    p_bar.y_range.start = Math.min(0, ...district_values);
+
+    // Calculate the minimum and maximum of the district values
+    const min_value = Math.min(...district_values);
+    const max_value = Math.max(...district_values);
+
+    // Set the y-axis range to span from the minimum to the maximum value
+    p_bar.y_range.start = min_value;
+    p_bar.y_range.end = max_value;
+    console.log(p_bar.y_range)
     """
 )
 
@@ -326,50 +320,44 @@ district_select_callback = CustomJS(
     code="""
     const selected_district = district_select.value;
     const selected_param = parameter_select.value;
-
+    var data = source.data;
     // Filter values based on the selected district
     const districts = source.data['District'];
     const param_values = source.data[selected_param];
     const selected_index = districts.indexOf(selected_district);
     const selected_value = param_values[selected_index];
 
+    console.log("district callback")
+    console.log("districts",districts)
+    console.log("selected_value",selected_value)
+
+    var selected_indices = [];
+    for (var i = 0; i < districts.length; i++) {
+        if (districts[i] === selected_district) {
+            selected_indices.push(i);
+        }
+    }
+
+    console.log("selected_indices", selected_indices);
+
+    source.selected.indices = selected_indices;
+    source.change.emit();
+
+
     // Update bar plot data
-    bar_source.data = {
+    bar_source.data ={
         districts: [selected_district],
         values: [selected_value],
         colors: ['#dc6601']  // Highlight color for selected district
     };
-
-
     p_bar.x_range.factors = [selected_district];
     p_bar.title.text = `${selected_param} in ${selected_district}`;
     p_bar.y_range.start = Math.min(0, selected_value);  // Adjust y-axis range if necessary
 
-    // Highlight selected district on the map
-    const selected_indices = source.selected.indices;
-    if (selected_indices.length > 0) {
-        selected_indices.forEach(idx => {
-            source.data['line_color'][idx] = 'black';  // Reset color for all districts
-        });
-    }
-    source.data['line_color'][selected_index] = '#dc6601';  // Highlight color for selected district
-    source.change.emit();  // Trigger update
-
-    // Optionally hide the boxplot or clear its data source
-    // boxplot_source.data = { q1: [], q2: [], q3: [], upper: [], lower: [] };
-    // p_box.title.text = "Boxplot";  // Optionally change title or description
-
     """
 )
 
-
-district_select.js_on_change('value', district_select_callback)
-
-
-
-
-
-
+# district_select.js_on_change('value', district_select_callback)
 
 
 callback = CustomJS(
@@ -377,11 +365,13 @@ callback = CustomJS(
               hover=hover, parameter_select=parameter_select, description_div=description_div, parameter_descriptions=parameter_descriptions,
               gdf=gdf_json, parameter_palettes=parameter_palettes, boxplot_source=boxplot_source, p_box=p_box, p_bar=p_bar, bar_source=bar_source),
     code="""
+
+    console.log("callback")
     const selected_param = parameter_select.value;
 
     // Update description text
     description_div.text = `<b style='font-size:16px;'>${selected_param}: ${parameter_descriptions[selected_param]}</b>`;
-    console.log(description_div.text);
+
 
     // Update color mapper and patches
     color_mapper.palette = parameter_palettes[selected_param];
@@ -394,9 +384,11 @@ callback = CustomJS(
 
     const selected = geo_source.selected.indices;
 
+    console.log("selected",selected)
+
     if (selected.length > 0) {
         const state = geo_source.data['State'][selected[0]];
-
+        console.log("inside the if statement")
         // Filter values based on the selected state
         const values = geo_source.data[selected_param].filter((value, index) => geo_source.data['State'][index] === state);
         values.sort((a, b) => a - b);
@@ -406,6 +398,7 @@ callback = CustomJS(
         const iqr = q3 - q1;
         const upper = Math.min(q3 + 1.5 * iqr, Math.max(...values));
         const lower = Math.max(q1 - 1.5 * iqr, Math.min(...values));
+        console.log("upper,lower",upper," ",lower)
         const boxplot_data = {
             q1: [q1],
             q2: [q2],
@@ -414,6 +407,9 @@ callback = CustomJS(
             lower: [lower]
         };
         boxplot_source.data = boxplot_data;
+        p_box.y_range.start = lower
+        p_box.y_range.end = upper
+        p_box.y_range.change.emit();        
         p_box.title.text = `${selected_param} in ${state}`;
 
         // Update bar plot data for selected parameter for all districts in the state
@@ -425,23 +421,33 @@ callback = CustomJS(
             if (geo_source.data['State'][i] === state) {
                 districts.push(geo_source.data['District'][i]);
                 district_values.push(geo_source.data[selected_param][i]);
-                if (geo_source.data['District'][i] === selected_district) {
-                    colors.push('#dc6601');
-                } else {
-                    colors.push('#006ca5');
-                }
+                colors.push('#006ca5')
+                //if (geo_source.data['District'][i] === selected_district) {
+                //    colors.push('#dc6601');
+                //} else {
+                //    colors.push('#006ca5');
+                //}
             }
         }
 
         bar_source.data = { districts: districts, values: district_values, colors: colors };
         p_bar.x_range.factors = districts;
         p_bar.title.text = `${selected_param} in ${state}`;
-        p_bar.y_range.start = Math.min(0, ...district_values);
-        console.log("p_bar.y_range.start", p_bar.y_range.start);
+        // Calculate the minimum and maximum of the district values
+        const min_value = Math.min(...district_values);
+        const max_value = Math.max(...district_values);
+
+        // Set the y-axis range to span from the minimum to the maximum value
+        p_bar.y_range.start = min_value;
+        p_bar.y_range.end = max_value;
 
     } else {
-        // Update boxplot data for the entire state
+        // Update boxplot data for the entire india
+
         const values = gdf.features.map(f => f.properties[selected_param]);
+
+        console.log("values",values)
+
         values.sort((a, b) => a - b);
         const q1 = values[Math.floor((values.length / 4))];
         const q2 = values[Math.floor((values.length / 2))];
@@ -449,6 +455,10 @@ callback = CustomJS(
         const iqr = q3 - q1;
         const upper = Math.min(q3 + 1.5 * iqr, Math.max(...values));
         const lower = Math.max(q1 - 1.5 * iqr, Math.min(...values));
+
+        console.log("upper",upper)
+        console.log("lower",lower)
+
         const boxplot_data = {
             q1: [q1],
             q2: [q2],
@@ -457,6 +467,9 @@ callback = CustomJS(
             lower: [lower]
         };
         boxplot_source.data = boxplot_data;
+        p_box.y_range.start = lower
+        p_box.y_range.end = upper
+        p_box.y_range.change.emit();
         p_box.title.text = `${selected_param}`;
     }
 """
@@ -467,23 +480,24 @@ parameter_select.js_on_change('value', callback)
 
 
 tap_callback = CustomJS(
-    args=dict(source=geo_source, boxplot_source=boxplot_source, bar_source=bar_source, parameter_select=parameter_select, p_box=p_box, p_bar=p_bar, patches=patches),
+    args=dict(source=geo_source, boxplot_source=boxplot_source, bar_source=bar_source, parameter_select=parameter_select, p_box=p_box,
+               p_bar=p_bar, patches=patches,district_select=district_select,state_select=state_select),
     code="""
-    const selected_param = parameter_select.value;
 
-    //console.log("old_selected",selected)
+    console.log("tapcallback working")
+    //state_select.value = []
+    //district_select.value = []
+    
+    source.selected.indices = [source.selected.indices.pop()]; 
+    source.change.emit();
+    console.log("source.selected.indices",source.selected.indices)
 
-    console.log("source.selected.indices[0]",[source.selected.indices[0]])
-    const selected= [source.selected.indices[0]];
+    const selected_param = parameter_select.value
+    if(source.selected.indices.length > 0) {
+    const state = source.data['State'][source.selected.indices]
 
-    console.log("new_selected",selected)
-    console.log("selected.length",selected.length)
-
-    if (selected.length > 0) {
-        const state = source.data['State'][selected[0]];
-
-        // Filter values based on the selected state
-        const values = source.data[selected_param].filter((value, index) => source.data['State'][index] === state);
+    //Update boxplot for selected parameter and state
+    const values = source.data[selected_param].filter((value, index) => source.data['State'][index] === state);
         values.sort((a, b) => a - b);
         const q1 = values[Math.floor((values.length / 4))];
         const q2 = values[Math.floor((values.length / 2))];
@@ -501,13 +515,16 @@ tap_callback = CustomJS(
             lower: [lower]
         };
         boxplot_source.data = boxplot_data;
+        p_box.y_range.start = lower
+        p_box.y_range.end = upper
+        p_box.y_range.change.emit();        
         p_box.title.text = `${selected_param} in ${state}`;
 
         // Update bar plot data for selected parameter for all districts in the state
         const districts = [];
         const district_values = [];
         const colors = [];
-        const selected_district = source.data['District'][selected[0]];
+        const selected_district = source.data['District'][source.selected.indices];
         for (let i = 0; i < source.data['State'].length; i++) {
             if (source.data['State'][i] === state) {
                 districts.push(source.data['District'][i]);
@@ -518,49 +535,58 @@ tap_callback = CustomJS(
                 } else {
                     colors.push('#006ca5');
                 }
-                
+               
             }
             }
-
-        
         bar_source.data = {districts: districts, values: district_values, colors: colors};
         p_bar.x_range.factors = districts;
         p_bar.title.text = `${selected_param} in ${state}`;
-        p_bar.y_range.start = Math.min(0, ...district_values)
-        console.log("p_bar.y_range.start",p_bar.y_range.start)
 
-        // Highlight the selected patch
-        //for (let i = 0; i < source.selected.indices.length; i++) {
-        //     source.data.fill_alpha[source.selected.indices[i]] = 0.7;
-        // }
-        source.change.emit();
-    } else {
-        // Clear the boxplot and bar plot if no selection is made
-        const boxplot_data = { q1: [], q2: [], q3: [], upper: [], lower: [] };
-        boxplot_source.data = boxplot_data;
-        p_box.title.text = "Boxplot";
-        
-        const bar_data = { districts: [], values: [], colors: [] };
-        bar_source.data = bar_data;
-        p_bar.x_range.factors = [];
-        p_bar.title.text = "Bar Plot";
+        const min_value = Math.min(...district_values);
+        const max_value = Math.max(...district_values);
 
-        // Unhighlight all patches
-        # for (let i = 0; i < source.data.fill_alpha.length; i++) {
-        #     source.data.fill_alpha[i] = 0.7;
-        # }
-        source.change.emit();
-    }
+        // Set the y-axis range to span from the minimum to the maximum value
+        p_bar.y_range.start = min_value;
+        p_bar.y_range.end = max_value;
+    }    
 """
 )
 
 
-p.js_on_event('tap', tap_callback)
+# p.js_on_event('tap', tap_callback)
+tap = TapTool()
+tap.callback = tap_callback
+p.add_tools(tap)  
 
 
+# Function to update bar plot data based on sorting
+def update_bar_plot(sort_order):
+    sorted_data = sorted(zip(bar_source.data['districts'], bar_source.data['values']), key=lambda x: x[1], reverse=(sort_order == "Descending"))
+    districts, values = zip(*sorted_data)
+    bar_source.data = dict(districts=districts, values=values, colors=['#006ca5'] * len(districts))
+    p_bar.x_range.factors = list(districts)
 
-layout = column(row(parameter_select,description_div,state_select, district_select),row(p,column(p_bar,p_box)))
 
+# Callback to update the bar plot based on the selected sort order
+sort_callback = CustomJS(args=dict(bar_source=bar_source, p_bar=p_bar), code="""
+    console.log("sort function working")                     
+    const sort_order = this.value;
+    const districts = bar_source.data['districts'];
+    const values = bar_source.data['values'];
+    let data = [];
+    for (let i = 0; i < districts.length; i++) {
+        data.push({district: districts[i], value: values[i]});
+    }
+    data.sort((a, b) => sort_order === "Descending" ? b.value - a.value : a.value - b.value);
+    bar_source.data['districts'] = data.map(d => d.district);
+    bar_source.data['values'] = data.map(d => d.value);
+    bar_source.change.emit();
+    p_bar.x_range.factors = data.map(d => d.district);
+""")
+
+sort_select.js_on_change('value', sort_callback)
+
+layout = column(row(parameter_select,description_div,state_select),row(p,sort_select,column(p_bar,p_box)))
 
 show(layout)
 
