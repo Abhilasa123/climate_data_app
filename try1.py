@@ -20,7 +20,7 @@ def transform_to_web_mercator(gdf):
     return gdf
 
 # Load your shapefile using Geopandas
-shapefile_path = r'"C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp\SSP585_ClimateData_India.shp"'
+shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp\SSP585_ClimateData_India.shp'
 gdf = gpd.read_file(shapefile_path)
 
 # Ensure all relevant columns are numeric
