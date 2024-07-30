@@ -28,6 +28,8 @@ def transform_to_web_mercator(gdf):
 # Load your shapefile using Geopandas
 # shapefile_path = r'C:\Users\AbhilasaBarman\Downloads\SSP245&585_shp\SSP245_ClimateData_India.shp'
 shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp'
+
+
 gdf = gpd.read_file(shapefile_path)
 
 # Ensure all relevant columns are numeric
@@ -214,6 +216,7 @@ p_box.rect(0, 'lower', 0.2, 0.01, source=boxplot_source, line_color="black")
 p_box.xgrid.grid_line_color = None
 p_box.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
 
+
 # Create a ColumnDataSource for the bar plot
 bar_source = ColumnDataSource(data=dict(districts=[], values=[], colors=[]))
 # Create the bar plot
@@ -222,6 +225,9 @@ p_bar.vbar(x='districts', top='values', width=0.9, color='colors', source=bar_so
 p_bar.xgrid.grid_line_color = None
 p_bar.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
 
+# configure the tooltip 
+hover_two = HoverTool(tooltips=[("Value", "@values")]) 
+p_bar.add_tools(hover_two)
 
 state_district_map = {state: gdf[gdf['State'] == state]['District'].unique().tolist() for state in gdf['State'].unique()}
 # Create Select widgets
