@@ -218,6 +218,9 @@ p_bar = figure(x_range=[], title="Bar Plot", width=800, height=400)
 p_bar.vbar(x='districts', top='values', width=0.9, color='colors', source=bar_source)
 p_bar.xgrid.grid_line_color = None
 p_bar.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
+# configure the tooltip 
+hover_two = HoverTool(tooltips=[("Value", "@values")]) 
+p_bar.add_tools(hover_two)
 
 
 state_district_map = {state: gdf[gdf['State'] == state]['District'].unique().tolist() for state in gdf['State'].unique()}
