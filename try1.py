@@ -1,3 +1,5 @@
+
+
 import os
 import xyzservices
 import geopandas as gpd
@@ -24,16 +26,62 @@ def transform_to_web_mercator(gdf):
     return gdf
 
 # Load your shapefile using Geopandas
-shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp\SSP585_ClimateData_India.shp'
-gdf = gpd.read_file(shapefile_path)
+shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\climate_data_app\SSP245&585_shp\SSP585_ClimateData_India.shp'
+# shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp'
 
-# Ensure all relevant columns are numeric
-numeric_columns = ['Population', 'HWDI_per_r', 'HWDI_per_t', 'Annual_RF_', 'JJAS_RF_Ch', 'OND_RF_Cha', 
-                   'TMAX_Annua', 'TMAX_MAM_C', 'TMIN_Annua', 'TMIN_DJF_C', 'JJAS_CDD_P', 'OND_CDD_Pe', 
-                   'MAM_CSU_pe', 'MAM_CSU__1', 'WSDI_wrt_9', 'Warm_spell', 'JJAS_R10MM', 'OND_R10MM_', 
-                   'JJAS_R20MM', 'OND_R20MM_', 'RX1Day_JJA', 'RX1Day_OND', 'RX5day_JJA', 'F5day_even', 
-                   'RX5day_OND', 'F5day_ev_1', 'SDII_JJAS', 'SDII_OND', 'Rainy_Days', 'Rainy_Da_1', 
-                   'Summer_Day', 'Annual_Wet', 'MAM_Wet_Bu']
+
+gdf_old = gpd.read_file(shapefile_path)
+
+# Parameters to include and their new names
+include_parameters = ['Annual_RF_', 'TMAX_Annua','TMAX_MAM_C','TMIN_DJF_C','HWDI_per_t',
+                      'JJAS_RF_Ch','OND_RF_Cha','JJAS_CDD_1','OND_CDD__1','JJAS_R20_1',
+                      'OND_R20MM1','RX5day_JJA','Annual_Wet','MAM_Wet_Bu','Annual_RH_','MAM_RH_Cha']
+rename_mapping = {
+    'TMAX_Annua': "Annual change in maximum temperature (C)",
+    'TMAX_MAM_C': "Change in maximum temperature during summer (C)",
+    'TMIN_DJF_C': "Change in minimum temperature during winter (C)",
+    'HWDI_per_t': "Heat wave index",
+    'Annual_RF_': "Change in annual Rainfall",
+    'JJAS_RF_Ch': "Change in Precipitation during monsoon",
+    'OND_RF_Cha': "Change in Precipitation during retreating monsoon",
+    'JJAS_CDD_1': "Change in continuous dry days during monsoon",
+    'OND_CDD__1': "Change in continuous dry days during retreating monsoon",
+    'JJAS_R20_1': "Change in number of days with precipitation greater than 20mm during monsoon",
+    'OND_R20MM1': "Change in number of days with precipitation greater than 20mm during retreating monsoon",
+    'RX5day_JJA': "Change in highest five-day precipitation during monsoon",
+    'Annual_Wet': "Annual wet bulb temperature (C)",
+    'MAM_Wet_Bu': "Summer wet bulb temperature (C)",
+    'Annual_RH_': "Annual change in relative humidity",
+    'MAM_RH_Cha': "Change in relative humidity during summer"
+
+}
+
+# Keep only the columns specified in include_parameters
+gdf_temp = gdf_old[include_parameters + ['State','District','geometry']]
+
+
+
+gdf = gdf_temp.rename(columns=rename_mapping)
+
+numeric_columns = [
+    'Annual change in maximum temperature (C)',
+    'Change in maximum temperature during summer (C)',
+    'Change in minimum temperature during winter (C)',
+    'Heat wave index',
+    'Change in annual Rainfall',
+    'Change in Precipitation during monsoon',
+    'Change in Precipitation during retreating monsoon',
+    'Change in continuous dry days during monsoon',
+    'Change in continuous dry days during retreating monsoon',
+    'Change in number of days with precipitation greater than 20mm during monsoon',
+    'Change in number of days with precipitation greater than 20mm during retreating monsoon',
+    'Change in highest five-day precipitation during monsoon',
+    'Annual wet bulb temperature (C)',
+    'Summer wet bulb temperature (C)',
+    'Annual change in relative humidity',
+    'Change in relative humidity during summer'
+]
+
 
 for col in numeric_columns:
     gdf[col] = pd.to_numeric(gdf[col], errors='coerce').fillna(0)
@@ -46,9 +94,11 @@ gdf_json = json.loads(gdf.to_json())
 
 # Create a GeoJSONDataSource from the GeoJSON data
 geo_source = GeoJSONDataSource(geojson=json.dumps(gdf_json))
+# print(geo_source.geojson[:1000]) 
+
 
 # Define the output file
-output_file("ssp585_map.html", title="Climate Data Map (SSP585)")
+output_file("ssp245_map.html", title="Climate Data Map (SSP245)")
 
 # Create the figure
 p = figure(
@@ -62,13 +112,13 @@ p = figure(
 )
 
 # Add tile provider (map background)
-p.add_tile("CartoDB Positron")
-# xyz_provider =  xyzservices.TileProvider(name="Google Maps",
-#                                              url=" https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-#                                              attribution="(C) xyzservices",
-#                                              )  
+# p.add_tile("CartoDB Positron")
+xyz_provider =  xyzservices.TileProvider(name="Google Maps",
+                                             url=" https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                                             attribution="(C) xyzservices",
+                                             )  
 
-# p.add_tile(xyz_provider,alpha=0.5)
+p.add_tile(xyz_provider,alpha=0.5)
 
 
 # Set initial map bounds to prevent resizing on selection
@@ -77,97 +127,69 @@ p.y_range = Range1d(start=gdf.total_bounds[1], end=gdf.total_bounds[3])
 
 # Define color mappers for each parameter
 parameter_palettes = {
-    'Population': Turbo256,
-    'HWDI_per_r': Viridis256,
-    'HWDI_per_t': Inferno256,
-    'Annual_RF_': Cividis256,
-    'JJAS_RF_Ch': Plasma256,
-    'OND_RF_Cha': Turbo256,
-    'TMAX_Annua': Viridis256,
-    'TMAX_MAM_C': Inferno256,
-    'TMIN_Annua': Cividis256,
-    'TMIN_DJF_C': Plasma256,
-    'JJAS_CDD_P': Turbo256,
-    'OND_CDD_Pe': Viridis256,
-    'MAM_CSU_pe': Inferno256,
-    'MAM_CSU__1': Cividis256,
-    'WSDI_wrt_9': Plasma256,
-    'Warm_spell': Turbo256,
-    'JJAS_R10MM': Viridis256,
-    'OND_R10MM_': Inferno256,
-    'JJAS_R20MM': Cividis256,
-    'OND_R20MM_': Plasma256,
-    'RX1Day_JJA': Turbo256,
-    'RX1Day_OND': Viridis256,
-    'RX5day_JJA': Inferno256,
-    'F5day_even': Cividis256,
-    'RX5day_OND': Plasma256,
-    'F5day_ev_1': Turbo256,
-    'SDII_JJAS': Viridis256,
-    'SDII_OND': Inferno256,
-    'Rainy_Days': Cividis256,
-    'Rainy_Da_1': Plasma256,
-    'Summer_Day': Turbo256,
-    'Annual_Wet': Viridis256,
-    'MAM_Wet_Bu': Inferno256
+
+    'Annual change in maximum temperature (C)': Viridis256,
+    'Change in maximum temperature during summer (C)': Inferno256,
+    'Change in minimum temperature during winter (C)': Plasma256,
+    'Heat wave index': Inferno256,
+    'Change in annual Rainfall': Cividis256,
+    'Change in Precipitation during monsoon' : Plasma256,
+    'Change in Precipitation during retreating monsoon' : Turbo256,
+    'Change in continuous dry days during monsoon' : Turbo256,
+    'Change in continuous dry days during retreating monsoon' : Viridis256,
+    'Change in number of days with precipitation greater than 20mm during monsoon' : Cividis256,
+    'Change in number of days with precipitation greater than 20mm during retreating monsoon' : Plasma256,
+    'Change in highest five-day precipitation during monsoon' : Inferno256,
+    'Annual wet bulb temperature (C)' : Viridis256,
+    'Summer wet bulb temperature (C)' : Inferno256,
+    'Annual change in relative humidity' : Cividis256,
+    'Change in relative humidity during summer' : Turbo256
 }
 
 # Define parameter descriptions
 parameter_descriptions = {
-    'Population': 'Total population in the area(2011).',
-    'HWDI_per_r': 'Heatwave Duration Index per region.',
-    'HWDI_per_t': 'Heatwave Duration Index per time period.',
-    'Annual_RF_': 'Annual rainfall.',
-    'JJAS_RF_Ch': 'Rainfall changes in Southwest monsoon (JJAS).',
-    'OND_RF_Cha': 'Rainfall changes in Northeast monsoon (OND).',
-    'TMAX_Annua': 'Maximum temperature annually.',
-    'TMAX_MAM_C': 'Maximum temperature in Summer (MAM).',
-    'TMIN_Annua': 'Minimum temperature annually.',
-    'TMIN_DJF_C': 'Minimum temperature in Winter (DJF).',
-    'JJAS_CDD_P': 'Consecutive dry days in Southwest monsoon (JJAS).',
-    'OND_CDD_Pe': 'Consecutive dry days in Northeast monsoon (OND).',
-    'MAM_CSU_pe': 'Cold spell duration in Summer (MAM).',
-    'MAM_CSU__1': 'Cold spell duration in Summer (MAM) (alternative measure).',
-    'WSDI_wrt_9': 'Warm spell duration index with respect to 90th percentile.',
-    'Warm_spell': 'Warm spell duration.',
-    'JJAS_R10MM': 'Number of days with more than 10mm rain in Southwest monsoon (JJAS).',
-    'OND_R10MM_': 'Number of days with more than 10mm rain in Northeast monsoon (OND).',
-    'JJAS_R20MM': 'Number of days with more than 20mm rain in Southwest monsoon (JJAS).',
-    'OND_R20MM_': 'Number of days with more than 20mm rain in Northeast monsoon (OND).',
-    'RX1Day_JJA': 'Maximum one-day rainfall in Southwest monsoon (JJAS).',
-    'RX1Day_OND': 'Maximum one-day rainfall in Northeast monsoon (OND).',
-    'RX5day_JJA': 'Maximum five-day rainfall in Southwest monsoon (JJAS).',
-    'F5day_even': 'Maximum five-day rainfall events.',
-    'RX5day_OND': 'Maximum five-day rainfall in Northeast monsoon (OND).',
-    'F5day_ev_1': 'Maximum five-day rainfall events (alternative measure).',
-    'SDII_JJAS': 'Simple daily intensity index in Southwest monsoon (JJAS).',
-    'SDII_OND': 'Simple daily intensity index in Northeast monsoon (OND).',
-    'Rainy_Days': 'Total number of rainy days.',
-    'Rainy_Da_1': 'Total number of rainy days (alternative measure).',
-    'Summer_Day': 'Total number of summer days.',
-    'Annual_Wet': 'Annual wet days.',
-    'MAM_Wet_Bu': 'Wet days in Summer (MAM).'
-}
+    'Annual change in maximum temperature (C)': "Yearly variation in the highest temperature recorded.",
+    'Change in maximum temperature during summer (C)': " Variation in summer's highest temperatures over time.",
+    'Change in minimum temperature during winter (C)': "Variation in the lowest winter temperatures.",
+    'Heat wave index': "Measures the frequency and intensity of heat waves.",
+    'Change in annual Rainfall': "Yearly variation in total precipitation.",
+    'Change in Precipitation during monsoon' : "Variation in monsoon rainfall amounts.",
+    'Change in Precipitation during retreating monsoon' : "Variation in rainfall during the monsoon's retreat phase.",
+    'Change in continuous dry days during monsoon' : "Variation in consecutive dry days during the monsoon season.",
+    'Change in continuous dry days during retreating monsoon' : "Variation in consecutive dry days during the retreating monsoon.",
+    'Change in number of days with precipitation greater than 20mm during monsoon' : "Variation in the number of days with heavy rainfall during the monsoon.",
+    'Change in number of days with precipitation greater than 20mm during retreating monsoon' : " Variation in the number of days with heavy rainfall during the retreating monsoon.",
+    'Change in highest five-day precipitation during monsoon' : "Variation in maximum five-day precipitation totals during the monsoon.",
+    'Annual wet bulb temperature (C)' : " Average annual temperature considering humidity.",
+    'Summer wet bulb temperature (C)' : "Average summer temperature including humidity.",
+    'Annual change in relative humidity' : 'Yearly variation in relative humidity.',
+    'Change in relative humidity during summer' : 'Variation in relative humidity specifically during the summer months.' 
+ }
 
 
 # Define initial color mapper for population
-initial_param = 'Population'
+# initial_param = 'Population' 
+initial_param = 'Change in annual Rainfall'
 color_mapper = LinearColorMapper(palette=parameter_palettes[initial_param], low=gdf[initial_param].min(), high=gdf[initial_param].max())
-
+initial_fill_color = "#FFFF9E" 
 # Add patches (polygons) to the figure
 patches = p.patches(
     'xs', 'ys',
     source=geo_source,
-    fill_color={'field': initial_param, 'transform': color_mapper},
+    # fill_color={'field': initial_param, 'transform': color_mapper},
+    fill_color=initial_fill_color,
     line_color="black",
     line_width=0.5,
-    fill_alpha=0.7,
+    fill_alpha=0.5,
     name="patches"
 )
 
 # Add hover tool
+# hover = HoverTool()
+# hover.tooltips = [("State", "@State"), ("District", "@District"), (initial_param, f"@{initial_param}")]
+# p.add_tools(hover)
 hover = HoverTool()
-hover.tooltips = [("State", "@State"), ("District", "@District"), (initial_param, f"@{initial_param}")]
+hover.tooltips = [("State", "@State"), ("District", "@District")]
 p.add_tools(hover)
 
 # Create a color bar for the population
@@ -177,7 +199,8 @@ color_bar = ColorBar(
     formatter=PrintfTickFormatter(format="%.2f"),
     label_standoff=12,
     border_line_color=None,
-    location=(0, 0)
+    location=(0, 0),
+    visible= False
 )
 
 p.add_layout(color_bar, 'left')
@@ -186,14 +209,16 @@ p.add_layout(color_bar, 'left')
 
 # Create a Select widget for parameters
 parameters = numeric_columns
-parameter_select = Select(title="Select Parameter:", value=parameters[0], options=parameters,styles={'background-color': '#4682B4', 'color': 'white','font-family': 'Arial, sans-serif', 'font-size': '14px'})
+parameter_select = Select(title="Select Parameter:", value=[], options=parameters,styles={'background-color': '#4682B4', 'color': 'white','font-family': 'Arial, sans-serif', 'font-size': '14px'})
 
 
-
-# Create a Div widget for parameter descriptions
-# description_div = Div(text=f"<b style='font-size:16px;'>{parameter_descriptions[initial_param]}</b>", width=800, height=50)
 # Create a Div widget for parameter descriptions with initial parameter and its description
-description_div = Div(text=f"<b style='font-size:16px;'>{initial_param}: {parameter_descriptions[initial_param]}</b>", width=800, height=50)
+description_div = Div(text=f"<b style='font-size:16px;'>{initial_param}: {parameter_descriptions[initial_param]}</b>", width=1000, height=50, visible = False)
+description_div_head = Div(
+    text=f"<h2>Description of the Parameter Selected</h2>",
+    width=1000,
+    height=50  # Adjust the height if needed to fit both lines
+)
 
 
 # Empty initial boxplot data
@@ -211,6 +236,7 @@ p_box.rect(0, 'lower', 0.2, 0.01, source=boxplot_source, line_color="black")
 p_box.xgrid.grid_line_color = None
 p_box.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
 
+
 # Create a ColumnDataSource for the bar plot
 bar_source = ColumnDataSource(data=dict(districts=[], values=[], colors=[]))
 # Create the bar plot
@@ -218,10 +244,10 @@ p_bar = figure(x_range=[], title="Bar Plot", width=800, height=400)
 p_bar.vbar(x='districts', top='values', width=0.9, color='colors', source=bar_source)
 p_bar.xgrid.grid_line_color = None
 p_bar.xaxis.major_label_orientation = 3.14 / 2  # Rotate x-axis labels vertically
+
 # configure the tooltip 
 hover_two = HoverTool(tooltips=[("Value", "@values")]) 
 p_bar.add_tools(hover_two)
-
 
 state_district_map = {state: gdf[gdf['State'] == state]['District'].unique().tolist() for state in gdf['State'].unique()}
 # Create Select widgets
@@ -258,7 +284,7 @@ state_select_callback = CustomJS(
 
     //Update district dropdown options
     district_select.options = state_district_map[state];
-    district_select.value = '';
+    //district_select.value = '';
 
     // Filter values based on the selected state
     const values = source.data[selected_param].filter((value, index) => source.data['State'][index] === state);
@@ -357,7 +383,7 @@ district_select_callback = CustomJS(
     """
 )
 
-# district_select.js_on_change('value', district_select_callback)
+district_select.js_on_change('value', district_select_callback)
 
 
 callback = CustomJS(
@@ -368,19 +394,32 @@ callback = CustomJS(
 
     console.log("callback")
     const selected_param = parameter_select.value;
-
+    console.log("selected_param",selected_param)
     // Update description text
     description_div.text = `<b style='font-size:16px;'>${selected_param}: ${parameter_descriptions[selected_param]}</b>`;
-
+    description_div.visible = true;
 
     // Update color mapper and patches
+   
     color_mapper.palette = parameter_palettes[selected_param];
     color_mapper.low = Math.min(...gdf.features.map(f => f.properties[selected_param]));
     color_mapper.high = Math.max(...gdf.features.map(f => f.properties[selected_param]));
     patches.glyph.fill_color = { field: selected_param, transform: color_mapper };
-
+    color_bar.color_mapper = color_mapper
+    color_bar.visible = true
+ 
     // Update hover tool
-    hover.tooltips = [["State", "@State"], ["District", "@District"], [selected_param, `@${selected_param}`]];
+    //hover.tooltips = [["State", "@State"], ["District", "@District"], [selected_param, '@${selected_param}']];
+    //console.log("hover tooltips:", hover.tooltips);
+    // Update hover tool to include selected parameter
+    //hover.tooltips = [
+    //    ["State", "@State"],
+    //    ["District", "@District"],
+    //    [selected_param,`@${selected_param}`]
+    //];
+    //hover.tooltips.append([selected_param, f"@{selected_param}"])
+
+    //hover.change.emit();
 
     const selected = geo_source.selected.indices;
 
@@ -586,9 +625,34 @@ sort_callback = CustomJS(args=dict(bar_source=bar_source, p_bar=p_bar), code="""
 
 sort_select.js_on_change('value', sort_callback)
 
-layout = column(row(parameter_select,description_div,state_select),row(p,sort_select,column(p_bar,p_box)))
-
+# layout = column(description_div_head,row(description_div,state_select,parameter_select),row(p,sort_select,column(p_bar,p_box)))
+layout = column(row(description_div_head,state_select,district_select,parameter_select),description_div,row(p,sort_select,column(p_bar,p_box)))
 show(layout)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
