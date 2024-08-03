@@ -98,7 +98,7 @@ geo_source = GeoJSONDataSource(geojson=json.dumps(gdf_json))
 
 
 # Define the output file
-output_file("ssp245_map.html", title="Climate Data Map (SSP245)")
+output_file("ssp585_map.html", title="Climate Data Map (SSP585)")
 
 # Create the figure
 p = figure(
