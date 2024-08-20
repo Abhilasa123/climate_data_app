@@ -784,7 +784,6 @@ sort_callback = CustomJS(args=dict(bar_source=bar_source, p_bar=p_bar), code="""
 
 sort_select.js_on_change('value', sort_callback)
 
-# layout = column(description_div_head,row(description_div,state_select,parameter_select),row(p,sort_select,column(p_bar,p_box)))
 layout = column(row(description_div,state_select,district_select,parameter_select),row(p,sort_select,column(p_bar,p_box)))
 show(layout)
 
