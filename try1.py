@@ -14,7 +14,6 @@ from bokeh.io import show
 from bokeh.models import Range1d
 from bokeh.layouts import layout
 from bokeh.palettes import linear_palette, Greens256, Reds256, Blues256
-
 from pyproj import Transformer
 
 # Function to transform lat/lon to Web Mercator
@@ -25,7 +24,6 @@ def transform_to_web_mercator(gdf):
 
 # Load your shapefile using Geopandas
 shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\climate_data_app\SSP245&585_shp\SSP585_ClimateData_India.shp'
-# shapefile_path = r'C:\Users\AbhilasaBarman\OneDrive - Azim Premji Foundation\Documents\SSP245&585_shp'
 
 
 gdf_old = gpd.read_file(shapefile_path)
@@ -200,9 +198,6 @@ patches = p.patches(
 )
 
 # Add hover tool
-# hover = HoverTool()
-# hover.tooltips = [("State", "@State"), ("District", "@District"), (initial_param, f"@{initial_param}")]
-# p.add_tools(hover)
 hover = HoverTool()
 hover.tooltips = [("State", "@State"), ("District", "@District")]
 p.add_tools(hover)
@@ -655,9 +650,6 @@ callback = CustomJS(
 parameter_select.js_on_change('value', callback);
 
 
-# parameter_select.js_on_change('value', callback)
-
-
 
 tap_callback = CustomJS(
     args=dict(source=geo_source, boxplot_source=boxplot_source, bar_source=bar_source, parameter_select=parameter_select, p_box=p_box,
@@ -791,7 +783,6 @@ sort_callback = CustomJS(args=dict(bar_source=bar_source, p_bar=p_bar), code="""
 
 sort_select.js_on_change('value', sort_callback)
 
-# layout = column(description_div_head,row(description_div,state_select,parameter_select),row(p,sort_select,column(p_bar,p_box)))
 layout = column(row(description_div,state_select,district_select,parameter_select),row(p,sort_select,column(p_bar,p_box)))
 show(layout)
 
